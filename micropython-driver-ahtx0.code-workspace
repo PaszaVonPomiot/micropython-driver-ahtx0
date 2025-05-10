@@ -1,0 +1,13 @@
+{
+    "folders": [
+        {
+            "name": "micropython-aht10",
+            "path": "."
+        },
+        {
+            "name": "Pico",
+            "uri": "pico:/"
+        }
+    ],
+    "settings": {}
+}

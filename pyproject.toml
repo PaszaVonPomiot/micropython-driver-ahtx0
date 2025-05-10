@@ -1,0 +1,19 @@
+[project]
+name = "micropython-driver-ahtx0"
+version = "0.1.0"
+description = "MicroPython driver for AHT10, AHT20 and AHT30 sensors over I2C"
+readme = "README.md"
+requires-python = ">=3.13"  # for type annotations only
+dependencies = []
+
+[tool.ruff]
+lint.ignore = ["F401"]  # Ignore unused imports
+
+[tool.mypy]
+mypy_path = ".venv/Lib/site-packages"
+custom_typeshed_dir = ".venv/Lib/site-packages"
+
+[dependency-groups]
+dev = [
+    "micropython-rp2-pico-stubs",
+]
