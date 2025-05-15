@@ -19,3 +19,9 @@ temp/
 
 # uv
 uv.lock
+
+# llm
+.continue
+
+# helper scripts
+i2c_scan.py
