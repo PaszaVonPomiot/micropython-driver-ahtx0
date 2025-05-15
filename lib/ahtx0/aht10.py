@@ -4,7 +4,7 @@ from micropython import const
 
 
 class Command:
-    """Sensor command constants."""
+    """Sensor commands."""
 
     INIT = (const(0xE1), const(0x08), const(0x00))
     TRIGGER_MEASUREMENT = (const(0xAC), const(0x33), const(0x00))
@@ -23,16 +23,16 @@ class AHT10:
     """Driver for AHT10 temperature and humidity sensor."""
 
     def __init__(self, i2c: I2C, i2c_address: int = const(0x38)) -> None:
-        sleep_ms(20)  # chip power-on
+        sleep_ms(20)  # power-on delay
         self._i2c = i2c
         self._i2c_address = i2c_address
         self._reset()
         self._buffer = bytearray(6)
 
     def _reset(self) -> None:
-        """Perform soft reset and initialization."""
+        """Perform soft reset and initialization. Requires 20 ms to wake up."""
         self._i2c.writeto(self._i2c_address, bytes(Command.SOFT_RESET))
-        sleep_ms(20)  # delay to wake up
+        sleep_ms(20)  # wake-up delay
 
     def _initialize(self) -> None:
         """Initialize and calibrate the sensor."""
@@ -46,15 +46,14 @@ class AHT10:
 
     def _get_raw_results_from_buffer(self) -> tuple[int, int]:
         """Extract raw humidity and temperature from buffer."""
-        # Raw humidity: 20 bits
+
         raw_humidity = (
             (self._buffer[1] << 12) | (self._buffer[2] << 4) | (self._buffer[3] >> 4)
-        )
+        )  # 20 bits
 
-        # Raw temperature: 20 bits
         raw_temperature = (
             ((self._buffer[3] & 0x0F) << 16) | (self._buffer[4] << 8) | self._buffer[5]
-        )
+        )  # 20 bits
 
         return raw_humidity, raw_temperature
 
@@ -81,7 +80,7 @@ class AHT10:
         return bool(state & StateMask.CAL_ENABLE)
 
     @property
-    def temperature(self):
+    def temperature(self) -> float:
         """
         Return temperature reading. Use this only if you won't use humidity,
         otherwise get both readings from `reading` property.
@@ -91,7 +90,7 @@ class AHT10:
         return self._calculate_temperature(raw_temperature=raw_temperature)
 
     @property
-    def humidity(self):
+    def humidity(self) -> float:
         """
         Return humidity reading. Use this only if you won't use temperature,
         otherwise get both readings from `reading` property.
@@ -101,8 +100,8 @@ class AHT10:
         return self._calculate_humidity(raw_humidity=raw_humidity)
 
     @property
-    def reading(self) -> tuple[float, float]:
-        """Return temperature in (Celsius) and relative humidity (%) readings."""
+    def readings(self) -> tuple[float, float]:
+        """Return temperature (Celsius) and relative humidity (%) readings."""
         self._measure()
         raw_humidity, raw_temperature = self._get_raw_results_from_buffer()
         return self._calculate_temperature(
