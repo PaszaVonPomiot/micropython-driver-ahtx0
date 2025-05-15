@@ -84,8 +84,9 @@ class AHT10:
         otherwise get both readings from `reading` property.
         """
         self._measure()
-        raw_temperature = self._get_raw_temperature_from_buffer()
-        return self._calculate_temperature(raw_temperature=raw_temperature)
+        return self._calculate_temperature(
+            raw_temperature=self._get_raw_temperature_from_buffer()
+        )
 
     @property
     def humidity(self) -> float:
@@ -94,8 +95,9 @@ class AHT10:
         otherwise get both readings from `reading` property.
         """
         self._measure()
-        raw_humidity = self._get_raw_humidity_from_buffer()
-        return self._calculate_humidity(raw_humidity=raw_humidity)
+        return self._calculate_humidity(
+            raw_humidity=self._get_raw_humidity_from_buffer()
+        )
 
     @property
     def readings(self) -> tuple[float, float]:

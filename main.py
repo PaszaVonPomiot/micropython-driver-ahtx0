@@ -1,11 +1,9 @@
-import utime
-from machine import Pin, I2C
-
 from lib.ahtx0 import AHT10
+from machine import Pin, I2C
 
 
 def main() -> None:
-    i2c = I2C(0, scl=Pin(9, pull=Pin.PULL_UP), sda=Pin(8, pull=Pin.PULL_UP))
+    i2c = I2C(0, scl=Pin(9), sda=Pin(8))
     sensor = AHT10(i2c=i2c)
 
     while True:
