@@ -1,4 +1,5 @@
-from machine import I2C, Pin
+# https://github.com/PaszaVonPomiot/micropython-driver-ahtx0
+from machine import I2C
 from utime import sleep_ms
 from micropython import const
 
@@ -12,7 +13,7 @@ class Command:
 
 
 class StateMask:
-    """Bit masks to extract chip state from state byte"""
+    """Bit masks to extract chip state from state byte."""
 
     BUSY = const(0b10000000)
     MODE = const(0b01100000)
@@ -22,7 +23,7 @@ class StateMask:
 class AHT10:
     """Driver for AHT10 temperature and humidity sensor."""
 
-    def __init__(self, i2c: I2C, i2c_address: int = const(0x38)) -> None:
+    def __init__(self, i2c: I2C, i2c_address: int = 0x38) -> None:
         sleep_ms(20)  # power-on delay
         self._i2c = i2c
         self._i2c_address = i2c_address
@@ -30,7 +31,7 @@ class AHT10:
         self._buffer = bytearray(6)
 
     def _reset(self) -> None:
-        """Perform soft reset and initialization. Requires 20 ms to wake up."""
+        """Perform soft reset and initialization."""
         self._i2c.writeto(self._i2c_address, bytes(Command.SOFT_RESET))
         sleep_ms(20)  # wake-up delay
 
@@ -44,18 +45,15 @@ class AHT10:
         sleep_ms(80)  # measurement time ~75 ms
         self._i2c.readfrom_into(self._i2c_address, self._buffer)
 
-    def _get_raw_results_from_buffer(self) -> tuple[int, int]:
-        """Extract raw humidity and temperature from buffer."""
+    def _get_raw_humidity_from_buffer(self) -> int:
+        """Extract 20 bits of raw humidity from buffer."""
+        return (self._buffer[1] << 12) | (self._buffer[2] << 4) | (self._buffer[3] >> 4)
 
-        raw_humidity = (
-            (self._buffer[1] << 12) | (self._buffer[2] << 4) | (self._buffer[3] >> 4)
-        )  # 20 bits
-
-        raw_temperature = (
+    def _get_raw_temperature_from_buffer(self) -> int:
+        """Extract 20 bits of raw temperature from buffer."""
+        return (
             ((self._buffer[3] & 0x0F) << 16) | (self._buffer[4] << 8) | self._buffer[5]
-        )  # 20 bits
-
-        return raw_humidity, raw_temperature
+        )
 
     def _calculate_humidity(self, raw_humidity: int) -> float:
         """Convert raw humidity to percentage."""
@@ -86,7 +84,7 @@ class AHT10:
         otherwise get both readings from `reading` property.
         """
         self._measure()
-        _, raw_temperature = self._get_raw_results_from_buffer()
+        raw_temperature = self._get_raw_temperature_from_buffer()
         return self._calculate_temperature(raw_temperature=raw_temperature)
 
     @property
@@ -96,14 +94,13 @@ class AHT10:
         otherwise get both readings from `reading` property.
         """
         self._measure()
-        raw_humidity, _ = self._get_raw_results_from_buffer()
+        raw_humidity = self._get_raw_humidity_from_buffer()
         return self._calculate_humidity(raw_humidity=raw_humidity)
 
     @property
     def readings(self) -> tuple[float, float]:
         """Return temperature (Celsius) and relative humidity (%) readings."""
         self._measure()
-        raw_humidity, raw_temperature = self._get_raw_results_from_buffer()
         return self._calculate_temperature(
-            raw_temperature=raw_temperature
-        ), self._calculate_humidity(raw_humidity=raw_humidity)
+            raw_temperature=self._get_raw_temperature_from_buffer()
+        ), self._calculate_humidity(raw_humidity=self._get_raw_humidity_from_buffer())
